@@ -7,6 +7,11 @@
 
 import UIKit
 
+enum ScreenType {
+    case documents
+    case settings
+}
+
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     var window: UIWindow?
@@ -16,7 +21,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
         self.window = UIWindow(windowScene: windowScene)
-        self.window?.rootViewController = UINavigationController(rootViewController: TableViewController(url: FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]))
+        self.window?.rootViewController = UINavigationController(rootViewController: LoginViewController())
         self.window?.makeKeyAndVisible()
     }
     
