@@ -34,7 +34,8 @@ class TableViewController: UITableViewController, UIImagePickerControllerDelegat
     
     private func layout() {
         let addFileButton = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: self, action: #selector(createNewImage))
-        self.navigationItem.rightBarButtonItem = addFileButton
+        let addFolderButton = UIBarButtonItem(image: UIImage(systemName: "folder.badge.plus"), style: .plain, target: self, action: #selector(createNewFolder))
+        self.navigationItem.rightBarButtonItems = [addFileButton, addFolderButton]
         navigationController?.navigationBar.prefersLargeTitles = true
         self.navigationItem.largeTitleDisplayMode = .always
         navigationItem.title = "\(url.lastPathComponent)"
@@ -47,6 +48,29 @@ class TableViewController: UITableViewController, UIImagePickerControllerDelegat
         picker.sourceType = .photoLibrary
         present(picker, animated: true)
         
+    }
+    
+    @objc private func createNewFolder(_ sender: Any) {
+        let alertController = UIAlertController(title: "Creating New Folder", message: nil, preferredStyle: .alert)
+        alertController.addTextField { textfield in
+            textfield.placeholder = "Enter foler name"
+        }
+        let createAction = UIAlertAction(title: "Create", style: .default) { action in
+            if let folderName = alertController.textFields?[0].text,
+               folderName != "" {
+                let newURL = self.url.appendingPathComponent(folderName)
+                do {
+                    try FileManager.default.createDirectory(at: newURL, withIntermediateDirectories: false)
+                } catch {
+                    print(error)
+                }
+                self.tableView.reloadData()
+            }
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        alertController.addAction(createAction)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true)
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
@@ -84,9 +108,26 @@ class TableViewController: UITableViewController, UIImagePickerControllerDelegat
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: UITableViewCell.CellStyle.subtitle, reuseIdentifier: "cell")
         let item = files[indexPath.row]
-        cell.detailTextLabel?.text = "Image"
+        var isFolder: ObjCBool = false
+        FileManager.default.fileExists(atPath: item.path, isDirectory: &isFolder)
+        if isFolder.boolValue == true {
+            cell.detailTextLabel?.text = "Folder"
+            cell.accessoryType = .disclosureIndicator
+        } else {
+            cell.detailTextLabel?.text = "Image"
+        }
         cell.textLabel?.text = item.lastPathComponent
         return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let item = files[indexPath.row]
+        var isFolder: ObjCBool = false
+        FileManager.default.fileExists(atPath: item.path, isDirectory: &isFolder)
+        if isFolder.boolValue {
+            let tvc = TableViewController(url: item)
+            navigationController?.pushViewController(tvc, animated: true)
+        }
     }
     
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
